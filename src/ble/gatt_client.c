@@ -505,7 +505,7 @@ static void emit_event_to_registered_listeners(hci_con_handle_t con_handle, uint
     while (btstack_linked_list_iterator_has_next(&it)){
         gatt_client_notification_t * notification = (gatt_client_notification_t*) btstack_linked_list_iterator_next(&it);
         if (notification->con_handle != con_handle) continue;
-        if (notification->attribute_handle != attribute_handle) continue;
+        if ((notification->attribute_handle != 0) && (notification->attribute_handle != attribute_handle)) continue;
         (*notification->callback)(HCI_EVENT_PACKET, 0, packet, size);
     } 
 }
