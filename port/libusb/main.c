@@ -65,7 +65,6 @@
 #include "btstack_stdin.h"
 #include "btstack_audio.h"
 #include "btstack_tlv_posix.h"
-#include "btstack_chipset_zephyr.h"
 
 #define TLV_DB_PATH_PREFIX "/tmp/btstack_"
 #define TLV_DB_PATH_POSTFIX ".tlv"
@@ -95,14 +94,6 @@ static void local_version_information_handler(uint8_t * packet){
     printf("- LMP Version    0x%04x\n", lmp_version);
     printf("- LMP Subversion 0x%04x\n", lmp_subversion);
     printf("- Manufacturer 0x%04x\n", manufacturer);
-    switch (manufacturer){
-        case BLUETOOTH_COMPANY_ID_THE_LINUX_FOUNDATION:
-            printf("Linux Foundation - assume Zephyr hci_usb example running on nRF52xx\n");
-            hci_set_chipset(btstack_chipset_zephyr_instance());
-            break;
-        default:
-            break;
-    }
 }
 
 static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){

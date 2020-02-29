@@ -64,12 +64,6 @@
 #include "btstack_stdin.h"
 #include "btstack_tlv_posix.h"
 
-#include "btstack_chipset_csr.h"
-#include "btstack_chipset_cc256x.h"
-#include "btstack_chipset_em9301.h"
-#include "btstack_chipset_stlc2500d.h"
-#include "btstack_chipset_tc3566x.h"
-
 int btstack_main(int argc, const char * argv[]);
 
 #define TLV_DB_PATH_PREFIX "/tmp/btstack_"
@@ -110,10 +104,6 @@ void hal_led_toggle(void){
     led_state = 1 - led_state;
     printf("LED State %u\n", led_state);
 }
-static void use_fast_uart(void){
-    // printf("Using 921600 baud.\n");
-    // config.baudrate_main = 921600;
-}
 
 static void local_version_information_handler(uint8_t * packet){
     printf("Local version information:\n");
@@ -127,34 +117,6 @@ static void local_version_information_handler(uint8_t * packet){
     printf("- LMP Version  0x%04x\n", lmp_version);
     printf("- LMP Revision 0x%04x\n", lmp_subversion);
     printf("- Manufacturer 0x%04x\n", manufacturer);
-    switch (manufacturer){
-        case BLUETOOTH_COMPANY_ID_CAMBRIDGE_SILICON_RADIO:
-            printf("Cambridge Silicon Radio - CSR chipset, Build ID: %u.\n", hci_revision);
-            use_fast_uart();
-            hci_set_chipset(btstack_chipset_csr_instance());
-            break;
-        case BLUETOOTH_COMPANY_ID_TEXAS_INSTRUMENTS_INC: 
-            printf("Texas Instruments - CC256x compatible chipset.\n");
-            use_fast_uart();
-            hci_set_chipset(btstack_chipset_cc256x_instance());
-            break;
-        case BLUETOOTH_COMPANY_ID_BROADCOM_CORPORATION:   
-            printf("Broadcom chipset. Not supported by posix-h5 port, please use port/posix-h5-bcm\n");
-            exit(10);
-            break;
-        case BLUETOOTH_COMPANY_ID_ST_MICROELECTRONICS:   
-            printf("ST Microelectronics - using STLC2500d driver.\n");
-            use_fast_uart();
-            hci_set_chipset(btstack_chipset_stlc2500d_instance());
-            break;
-        case BLUETOOTH_COMPANY_ID_EM_MICROELECTRONIC_MARIN_SA:
-            printf("EM Microelectronics - using EM9301 driver.\n");
-            hci_set_chipset(btstack_chipset_em9301_instance());
-            break;
-        default:
-            printf("Unknown manufacturer / manufacturer not supported yet.\n");
-            break;
-    }
 }
 
 static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size){

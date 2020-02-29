@@ -64,13 +64,6 @@
 #include "btstack_stdin.h"
 #include "btstack_tlv_posix.h"
 
-#include "btstack_chipset_bcm.h"
-#include "btstack_chipset_csr.h"
-#include "btstack_chipset_cc256x.h"
-#include "btstack_chipset_em9301.h"
-#include "btstack_chipset_stlc2500d.h"
-#include "btstack_chipset_tc3566x.h"
-
 int is_bcm;
 
 #define TLV_DB_PATH_PREFIX "/tmp/btstack_"
@@ -119,9 +112,6 @@ static void packet_handler (uint8_t packet_type, uint16_t channel, uint8_t *pack
                 // terminate, name 248 chars
                 packet[6+248] = 0;
                 printf("Local name: %s\n", &packet[6]);
-                if (is_bcm){
-                    btstack_chipset_bcm_set_device_name((const char *)&packet[6]);
-                }
             }        
             if (HCI_EVENT_IS_COMMAND_COMPLETE(packet, hci_read_local_version_information)){
                 local_version_information_handler(packet);
@@ -153,18 +143,6 @@ void hal_led_toggle(void){
     led_state = 1 - led_state;
     printf("LED State %u\n", led_state);
 }
-static void use_fast_uart(void){
-#if defined(HAVE_POSIX_B240000_MAPPED_TO_3000000) || defined(HAVE_POSIX_B600_MAPPED_TO_3000000)
-    printf("Using 3000000 baud.\n");
-    config.baudrate_main = 3000000;
-#elif defined(HAVE_POSIX_B1200_MAPPED_TO_2000000) || defined(HAVE_POSIX_B300_MAPPED_TO_2000000)
-    printf("Using 2000000 baud.\n");
-    config.baudrate_main = 2000000;
-#else
-    printf("Using 921600 baud.\n");
-    config.baudrate_main = 921600;
-#endif
-}
 
 static void local_version_information_handler(uint8_t * packet){
     printf("Local version information:\n");
@@ -178,57 +156,6 @@ static void local_version_information_handler(uint8_t * packet){
     printf("- LMP Version    0x%04x\n", lmp_version);
     printf("- LMP Subversion 0x%04x\n", lmp_subversion);
     printf("- Manufacturer 0x%04x\n", manufacturer);
-    switch (manufacturer){
-        case BLUETOOTH_COMPANY_ID_CAMBRIDGE_SILICON_RADIO:
-            printf("Cambridge Silicon Radio - CSR chipset, Build ID: %u.\n", hci_revision);
-            use_fast_uart();
-            hci_set_chipset(btstack_chipset_csr_instance());
-            break;
-        case BLUETOOTH_COMPANY_ID_TEXAS_INSTRUMENTS_INC: 
-            printf("Texas Instruments - CC256x compatible chipset.\n");
-            if (lmp_subversion != btstack_chipset_cc256x_lmp_subversion()){
-                printf("Error: LMP Subversion does not match initscript! ");
-                printf("Your initscripts is for %s chipset\n", btstack_chipset_cc256x_lmp_subversion() < lmp_subversion ? "an older" : "a newer");
-                printf("Please update Makefile to include the appropriate bluetooth_init_cc256???.c file\n");
-                exit(10);
-            }
-            use_fast_uart();
-            hci_set_chipset(btstack_chipset_cc256x_instance());
-#ifdef ENABLE_EHCILL
-            printf("eHCILL enabled.\n");
-#else
-            printf("eHCILL disable.\n");
-#endif
-
-            break;
-        case BLUETOOTH_COMPANY_ID_BROADCOM_CORPORATION:   
-            printf("Broadcom/Cypress - using BCM driver.\n");
-            hci_set_chipset(btstack_chipset_bcm_instance());
-            use_fast_uart();
-            is_bcm = 1;
-            break;
-        case BLUETOOTH_COMPANY_ID_ST_MICROELECTRONICS:   
-            printf("ST Microelectronics - using STLC2500d driver.\n");
-            use_fast_uart();
-            hci_set_chipset(btstack_chipset_stlc2500d_instance());
-            break;
-        case BLUETOOTH_COMPANY_ID_EM_MICROELECTRONIC_MARIN_SA:
-            printf("EM Microelectronics - using EM9301 driver.\n");
-            hci_set_chipset(btstack_chipset_em9301_instance());
-            use_fast_uart();
-            break;
-        case BLUETOOTH_COMPANY_ID_NORDIC_SEMICONDUCTOR_ASA:
-            printf("Nordic Semiconductor nRF5 chipset.\n");
-            break;        
-        case BLUETOOTH_COMPANY_ID_TOSHIBA_CORP:
-            printf("Toshiba - using TC3566x driver.\n");
-            hci_set_chipset(btstack_chipset_tc3566x_instance());
-            use_fast_uart();
-            break;
-        default:
-            printf("Unknown manufacturer / manufacturer not supported yet.\n");
-            break;
-    }
 }
 
 int main(int argc, const char * argv[]){
